@@ -1,0 +1,127 @@
+---
+title: "Regression Models Course Project"
+author: "Lou Solot"
+date: "February 20, 2016"
+output: pdf_document
+---
+
+## Exploring the Relationship Between a Set of Variables and Miles per Gallon (MPG)
+
+Specifically:
+
+1. Is an automatic or manual transmission better for MPG
+2. Quantify the MPG difference between automatic and manual transmissions
+
+
+
+```{r setup, echo=TRUE,results='hide',message=FALSE}
+## Bring in necessary libraries
+library(dplyr)
+library(reshape2)
+library(datasets)
+library(ggplot2)
+data(mtcars)
+```
+
+____
+
+### Exploring the mtcars dataset
+This portion of the analysis will explore that data and try and find the relationship, if any, between transmission type (automatic or manual) and miles per gallon (mpg) as well as the effect of other variables in the mtcars dataset.
+<br/>
+First let's take a look at a summary of the data itself
+
+
+```{r mtcars,echo=TRUE}
+summary(mtcars)
+```
+
+#### Let's see a pairs plot:
+
+The pairs plot (see appendix 1) does not give any obvious answers although some relationships between the different variables can be seen and used for continuing the exploration.
+<br/>
+Next we look at a violin plot of transmission type vs mpg (appendix 2). The violin plot visually leads us to infer that manual transmissions are correlated with higher mpg 
+<br/>
+#### Welch's Two Sample t-test
+<br/>
+We can now use a t-test to determine if this perceived difference is statistically significant
+<br/>
+
+```{r t-test, echo=TRUE}
+mtman <- filter(mtcars, am == 1)
+mtaut <- filter(mtcars, am == 0)
+t.test(mtman$mpg, mtaut$mpg)
+```
+
+The low value p-value of 0.001374 shows that this difference in means is statistically significant
+<br/>
+#### Correlation
+Let's take a quick look at the correlation matrix:
+<br/>
+```{r corr,echo=TRUE}
+cor(mtcars)
+```
+
+As expected, transmission type is correlated with mpg but so are several others such as weight, cylinder count, displacement and horesepower.
+<br/>
+Let's proceed to the regression analysis
+<br/>
+
+## Regression Analysis
+
+#### MPG As a Result of Transmission Type
+
+Let's fit the regression for mpg vs. am
+
+```{r fit1, echo=TRUE}
+fit1 <- lm(mpg ~ am, mtcars)
+summary(fit1)
+```
+
+Not surprisingly, this shows that manual transmission cars have 7.245 more mpg than automatic transmission cars. However, with a multiple r-squared value of 0.3598, we can say this model only explains 35.98% of the variance
+<br/>
+
+#### Adding in other correlated variables into the model and compare to fit1 (using anova)
+
+```{r fit2, echo=TRUE}
+fit2 <- lm(mpg ~ am + hp + wt, mtcars)
+anova(fit1, fit2)
+```
+
+With such a low p-value (3.745e-09), the difference between the two models is statistically significant
+
+### Residuals
+
+Let's look at the residual plots of the multivariate model (Appendix 3)
+<br/>
+
+### Summary of Multivariate Model
+
+```{r summary, echo=TRUE}
+summary(fit2)
+```
+
+
+## Conclusion
+
+The multiple r-squared value of 0.8399 shows that this multivariate model explains ~84% of the variance of the data. It can be stated that manual transmission cars have 2.084 better mpg than automatic transmission cars based on this model
+
+### Appendix
+
+#### Pairs Plot
+```{r pairs, echo=TRUE}
+plot(mtcars)
+```
+
+#### Violin Plot
+```{r violin, echo=TRUE}
+g <- ggplot(mtcars, aes(am,mpg))
+g <- g + geom_violin(aes(fill = factor(am)), draw_quantiles = c(0.5), lwd = 0.5) + ggtitle("MPG vs. AM")
+g
+```
+
+
+#### Residual Plots
+```{r residuals, echo=TRUE}
+par(mfrow = c(2,2))
+plot(fit2)
+```
